@@ -1,0 +1,70 @@
+name: Build and Release APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.13.4'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      # Build single universal APK
+      - name: Build Universal APK
+        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
+
+      # Upload the universal APK
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: noixsAI-universal-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  release:
+    needs: build_apk
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: noixsAI-universal-release
+          path: release_apk
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: Automated APK release
+          draft: false
+          prerelease: false
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release_apk/app-release.apk
+          asset_name: noixsAI.apk
+          asset_content_type: application/vnd.android.package-archive
