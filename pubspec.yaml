@@ -3,7 +3,7 @@ description: A very sexy Flutter template!
 version: 1.1.1+5
 
 environment:
-  sdk: ">=2.2.2 <3.0.0"
+  sdk: ">=2.17.0 <4.0.0"
 
 dependencies:
   flutter:
